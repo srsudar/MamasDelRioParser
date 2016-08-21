@@ -46,7 +46,7 @@ test('getMessageStartIdx matches one line', function(t) {
 test('getMessageStartIdx matches across lines', function(t) {
   var str =
     'No Modificar:\n----\n{"f":"b","d":"258","m":23,"d":02}\n4/6/16, 4:19 PM';
-  var expected = 53;
+  var expected = 52;
   var actual = parser.getMessageStartIdx(str);
   t.equal(actual, expected);
   t.end();

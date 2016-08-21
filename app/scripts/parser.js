@@ -6,13 +6,19 @@
 
 exports.NO_MSG_FOUND = 'no json found';
 
+/** The flag we return if we don't find a match in a string. */
+var FLAG_NO_MATCH = -1;
+
 /**
  * A regex literal that defines the start of a message. Whatsapp doesn't
  * provide an API for this output, so we are best guessing it here. It could
  * change according to locale to which the file was exported or some other
  * terrible thing like that.
+ *
+ * We're basically just saying match the beginning of the string, a date, and
+ * then a comma followed by a space..
  */
-exports.REGEX_MSG_START = /$[0-9](1,2)\/[0-9](1,2)\/[0-9](1,2), /;
+exports.REGEX_MSG_START = /(^|\n)[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}, /;
 
 /**
  * Convert raw string content into an array of lines. Similar to Python's
@@ -46,5 +52,9 @@ exports.findMessageStarts = function(str) {
  * @param {string} str
  */
 exports.getMessageStartIdx = function(str) {
-  return null;
+  var match = exports.REGEX_MSG_START.exec(str);
+  if (!match) {
+    return FLAG_NO_MATCH;
+  }
+  return match.index;
 };
