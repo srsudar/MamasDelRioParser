@@ -2,6 +2,15 @@
 'use strict';
 var fs = require('fs');
 
+exports.TestStruct = function(msg, raw, lines) {
+  if (!(this instanceof exports.TestStruct)) {
+    throw new Error('must call TestStruct with new');
+  }
+  this.msg = msg;
+  this.raw = raw;
+  this.lines = lines;
+};
+
 /**
  * @param {string} path
  *
