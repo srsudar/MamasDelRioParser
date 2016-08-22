@@ -51,6 +51,41 @@ exports.getStartMessageRegex = function() {
 };
 
 /**
+ * Convert str to messages and try to extract JSON from each message. Returns
+ * all the JSON object as well as all the messages from which JSON was not
+ * extracted, to allow manual inspection of missed errors.
+ *
+ * @param {string} str the string from which to parse and extract messages
+ *
+ * @return {object} an object with two keys:
+ * {
+ *   json: Array,
+ *   noJson: Array
+ * }
+ * json is an Array of all JSON object extracted, while noJson is an Array of
+ * all the messages that did not produce JSON.
+ */
+exports.extractAllMessages = function(str) {
+  var messages = exports.extractMessages(str);
+  var json = [];
+  var noJson = [];
+  
+  messages.forEach(msg => {
+    var sniffed = exports.sniffJson(msg);  // sniff sniff
+    if (sniffed) {
+      json.push(sniffed);
+    } else {
+      noJson.push(msg);
+    }
+  });
+
+  return {
+    json: json,
+    noJson: noJson
+  };
+};
+
+/**
  * Take a string and return an array of strings representing the messages. This
  * is essentially just breaking the str into message-sized chunks.
  *
@@ -179,7 +214,16 @@ exports.findMessageStarts = function(str) {
   var regex = exports.getStartMessageRegex();
   var iterations = 0;
   while ((arr = regex.exec(str)) !== null && iterations < MAX_MESSAGES) {
-    result.push(arr.index);
+    // We have two cases to consider here. We are matching ^ or \n. ^
+    // represents no character, while \n is a character. If we've matched \n,
+    // the index+1 is the start.
+    var nextStart = arr.index;
+    if (nextStart !== 0) {
+      // ^ matches the beginning of the input string, so this can only occur if
+      // the index is zero.
+      nextStart = nextStart + 1;
+    }
+    result.push(nextStart);
     iterations++;
   }
   return result;
