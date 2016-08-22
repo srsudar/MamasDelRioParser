@@ -92,7 +92,9 @@ var optimizeHtmlTask = function(src, dest) {
     })))
     .pipe($.if('*.js', $.uglify({
       preserveComments: 'some',
-      reserve: 'require',
+      mangle: {
+        except: ['require']
+      }
     })))
     // Concatenate and minify styles
     // In case you are still using useref build blocks
