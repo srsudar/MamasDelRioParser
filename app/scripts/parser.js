@@ -15,6 +15,9 @@ var MAX_MESSAGES = 100;
 /** The flag we return if we don't find a match in a string. */
 var FLAG_NO_MATCH = -1;
 
+/** The maximum number of times we try to sniff a JSON object. */
+var NUM_PARSE_ATTEMPTS = 10;
+
 /**
  * Convert raw string content into an array of lines. Similar to Python's
  * readlines method.
@@ -72,6 +75,93 @@ exports.extractMessages = function(str) {
     result.push(msg);
   }
 
+  return result;
+};
+
+/**
+ * Make a best effort attempt to extract a JSON string from the string. This
+ * tries to find JSON in the message somewhere. It does its best to find the
+ * start and end of the JSON, but it isn't perfect and it definitely can be
+ * deceived.
+ *
+ * E.g., (ignoring quotations and escaping in these examples), hello {'foo':
+ * 'bar'} should return parsed {foo: bar}, dropping the hellow.
+ *
+ * "hello { {foo: bar}" is trickier, as there is a { in the message that might
+ * throw it off. sniffJson tries to solve this, but it doesn't try to be
+ * perfect. It tries to catch innocent mistakes.
+ *
+ * @param {sting} str string to sniff
+ *
+ * @return {object|null} returns the parsed JSON or null if it cannot find
+ * JSON.
+ */
+exports.sniffJson = function(str) {
+  // We are going to find {, and count +1 for each additional { we find. We
+  // will subtract 1 for each } we find. If we ever go negative, we know we
+  // have started in the wrong place or it is corrupted.
+  // 
+  // We aren't trying to account for parse error inside the JSON--we're just
+  // trying to find the right place to start parsing.
+  //
+  // Once we make it back to 0, we know we have valid JSON. We'll try it.
+
+  var open = '{';
+  var close = '}';
+
+  var exploring = str;
+  var start = exploring.indexOf(open) - 1;
+  // Try a limited number of times.
+  for (var i = 0; i < NUM_PARSE_ATTEMPTS; i++) {
+    start++;
+    exploring = exploring.substring(start);
+    var counter = 0;
+
+    var foundStart = false;
+    for (var ptr = 0; ptr < exploring.length; ptr++) {
+      var chr = exploring.charAt(ptr);
+      if (chr === open) {
+        // console.log('found start');
+        foundStart = true;
+        counter++;
+      } else if (chr === close) {
+        counter--;
+      }
+      if (counter === 0 && foundStart) {
+        // We've found an end point. Extract the string and try to parse it.
+        // ptr is pointing at a }. We need to take substring to that position
+        // +1, to ensure that we capture the closing brace.
+        var strOfInterest = exploring.substring(0, ptr + 1);
+        var parsed = exports.tryToParse(strOfInterest);
+        if (parsed) {
+          return parsed;
+        } else {
+          // Invalid starting point. Choose the next.
+          break;
+        }
+      } else if (counter < 0) {
+        // More } than {, we've found an invalid start point.
+        break;
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Safe way to parse questionable strings to JSON.
+ *
+ * @param {string} str the string to try and parse
+ *
+ * @return {object|null} JSON.parse() result if the parse succeeds, else null
+ */
+exports.tryToParse = function(str) {
+  var result = null;
+  try {
+    result = JSON.parse(str);
+  } catch (err) {
+    // Couldn't parse the value.
+  }
   return result;
 };
 
