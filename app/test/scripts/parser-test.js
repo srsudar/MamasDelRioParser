@@ -2,10 +2,23 @@
 var test = require('tape');
 var res = require('./test-resources');
 var parser = require('../../scripts/parser');
+var sinon = require('sinon');
 
 function helperAssertNoMessageStart(str, t) {
   var match = parser.getMessageStartIdx(str);
   t.equal(match, -1);
+  t.end();
+}
+
+function testExtractHelper(str, indices, expected, t) {
+  // Save this so we can restore state
+  var originalFn = parser.findMessageStarts;
+
+  parser.findMessageStarts = sinon.stub().returns(indices);
+  var actual = parser.extractMessages(str);
+
+  t.deepEqual(actual, expected);
+  parser.findMessageStarts = originalFn;
   t.end();
 }
 
@@ -116,4 +129,52 @@ test('getMessageStartIdx ignores 12/12/25,4:19 PM', function(t) {
 test('getMessageStartIdx ignores 1/25, 4:19 PM', function(t) {
   var str = '1/25, 4:19 PM';
   helperAssertNoMessageStart(str, t);
+});
+
+test('extractMessages returns correct no spaces', function(t) {
+  var start = 'foobarbaz';
+  var indices = [0, 3, 6];
+  var expected = ['foo', 'bar', 'baz'];
+
+  testExtractHelper(start, indices, expected, t);
+});
+
+test('extractMessages returns correct with spaces', function(t) {
+  var start = 'foo bar baz';
+  var indices = [0, 4, 8];
+  var expected = ['foo ', 'bar ', 'baz'];
+
+  testExtractHelper(start, indices, expected, t);
+});
+
+test('extractMessages returns correct with newline', function(t) {
+  var start = 'banana fofana\nwhoops';
+  var indices = [0, 7, 14];
+  var expected = ['banana ', 'fofana\n', 'whoops'];
+
+  testExtractHelper(start, indices, expected, t);
+});
+
+test('extractMessages for no matches', function(t) {
+  var start = 'whoop hopp hwop';
+  var indices = [];
+  var expected = [];
+
+  testExtractHelper(start, indices, expected, t);
+});
+
+test('extractMessages for single match', function(t) {
+  var start = 'abcdefgh';
+  var indices = [2];
+  var expected = ['cdefgh'];
+
+  testExtractHelper(start, indices, expected, t);
+});
+
+test('extractMessages for two matches', function(t) {
+  var start = 'cat dog';
+  var indices = [1, 4];
+  var expected = ['at ', 'dog'];
+
+  testExtractHelper(start, indices, expected, t);
 });

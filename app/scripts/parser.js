@@ -48,6 +48,34 @@ exports.getStartMessageRegex = function() {
 };
 
 /**
+ * Take a string and return an array of strings representing the messages. This
+ * is essentially just breaking the str into message-sized chunks.
+ *
+ * @param {string} str a monstro string
+ *
+ * @return {Array<string>} array of string messages
+ */
+exports.extractMessages = function(str) {
+  var indices = exports.findMessageStarts(str);
+  var result = [];
+  
+  for (var i = 0; i < indices.length; i++) {
+    // Only read up to the next index, except for the last one which we will
+    // read until the end of the string.
+    var start = indices[i];
+    var end = str.length;
+    if (i !== indices.length - 1) {
+      // Safe to use i+1.
+      end = indices[i + 1];
+    }
+    var msg = str.substring(start, end);
+    result.push(msg);
+  }
+
+  return result;
+};
+
+/**
  * Find the start indices of all messages in str. E.g. if str contains two
  * messages, the result will have length = 2.
  *
