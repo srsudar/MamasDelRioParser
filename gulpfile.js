@@ -52,7 +52,9 @@ var AUTOPREFIXER_BROWSERS = [
 var DIST = 'dist';
 
 var dist = function(subpath) {
-  return !subpath ? DIST : path.join(DIST, subpath);
+  var result = !subpath ? DIST : path.join(DIST, subpath);
+  gutil.log('dist output:', result);
+  return result;
 };
 
 var styleTask = function(stylesPath, srcs) {
@@ -85,11 +87,12 @@ var optimizeHtmlTask = function(src, dest) {
   return gulp.src(src)
     .pipe(assets)
     // Concatenate and minify JavaScript
-    // .pipe($.if('*.js', $.babel({
-    //   presets: ['es2015']
-    // })))
+    .pipe($.if('*.js', $.babel({
+      presets: ['es2015']
+    })))
     .pipe($.if('*.js', $.uglify({
-      preserveComments: 'some'
+      preserveComments: 'some',
+      reserve: 'require',
     })))
     // Concatenate and minify styles
     // In case you are still using useref build blocks
