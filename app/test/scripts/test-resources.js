@@ -34,8 +34,17 @@ exports.getFileAsString = function(path) {
  *
  * @return {Promise -> string}
  */
-exports.getWhatsappChat1 = function() {
+exports.getWhatsappChat1Str = function() {
   return exports.getFileAsString('./assets/whatsapp1.txt');
+};
+
+/**
+ * Get the string associated with assets/whatsapp2.txt.
+ *
+ * @return {Promise -> string}
+ */
+exports.getWhatsappChat2Str = function() {
+  return exports.getFileAsString('./assets/whatsapp2.txt');
 };
 
 /**

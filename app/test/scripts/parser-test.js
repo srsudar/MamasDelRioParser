@@ -36,6 +36,48 @@ test('readLines works on basicLines.txt', function(t) {
   });
 });
 
+test('findMessageStarts handles empty string', function(t) {
+  var actual = parser.findMessageStarts('');
+  var expected = [];
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('findMessageStarts handles no matches', function(t) {
+  var actual = parser.findMessageStarts('this aint no match');
+  var expected = [];
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('findMessageStarts handles single match at start', function(t) {
+  var str = '12/25/14, ';
+  var expected = [0];
+  var actual = parser.findMessageStarts(str);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('findMessageStarts handles whatsapp1.txt', function(t) {
+  res.getWhatsappChat1Str().then(str => {
+    var actual = parser.findMessageStarts(str);
+    // Hand-counted. Tedious.
+    var expected = [0, 1, 2];
+    t.deepEqual(actual, expected);
+    t.end();
+  });
+});
+
+test('findMessageStarts handles whatsapp2.txt', function(t) {
+  res.getWhatsappChat2Str().then(str => {
+    var actual = parser.findMessageStarts(str);
+    // Hand-counted. Tedious.
+    var expected = [0, 1, 2];
+    t.deepEqual(actual, expected);
+    t.end();
+  });
+});
+
 test('getMessageStartIdx matches one line', function(t) {
   var str = '2/23/16, 12:45 PM - Sam Sudar: Prueba';
   var actual = parser.getMessageStartIdx(str);

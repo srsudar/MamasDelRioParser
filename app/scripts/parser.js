@@ -6,6 +6,12 @@
 
 exports.NO_MSG_FOUND = 'no json found';
 
+/**
+ * The maximum number of messages we allow. This is here mostly to avoid being
+ * caught in an infinite while loop.
+ */
+exports.MAX_MESSAGES = 100;
+
 /** The flag we return if we don't find a match in a string. */
 var FLAG_NO_MATCH = -1;
 
@@ -42,8 +48,17 @@ exports.readLines = function(str) {
  * @return {Array<integer>} an array with start indices of messages
  */
 exports.findMessageStarts = function(str) {
-  console.log(str);
-  return null;
+  var result = [];
+  // This feels ugly, as we're creating lots of strings. Is there a native
+  // regex way to do this?
+  var nextStart = exports.getMessageStartIdx(str);
+  var numFound = 0;
+  while (nextStart !== FLAG_NO_MATCH && numFound <= exports.MAX_MESSAGES) {
+    numFound++;
+    result.push(nextStart);
+    nextStart = exports.getMessageStartIdx(str.substring(nextStart));
+  }
+  return result;
 };
 
 /**

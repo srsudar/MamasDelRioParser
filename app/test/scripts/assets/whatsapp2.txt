@@ -1,0 +1,13 @@
+2/23/16, 12:45 PM - Sam Sudar: Prueba
+2/23/16, 12:48 PM - Sam Sudar: Hola Doctor, tengo nuevo bébe! Es de madre con DNI 258 y dio a luz el día 23 del mes 02.
+2/24/16, 2:40 PM - Sam Sudar: Hola Doctor, tengo nuevo bébe! Es de madre con DNI 10288626, y dio a luz el día 23 del mes 09.
+
+No Modificar:
+----
+{"f":"b","d":"10288626","m":23,"d":09}
+3/7/16, 1:18 PM - Sam Sudar: Hola Doctor, tengo nuevo bébe! Es de madre con DNI 258 y dio a luz el día 23 del mes 02.
+
+No Modificar:
+----
+{"f":"b","d":"258","m":23,"d":02}
+4/6/16, 4:19 PM - 4/6/16, 4:19 PM valid start, but invalid message
