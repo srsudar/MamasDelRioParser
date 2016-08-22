@@ -33,6 +33,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <input type="file" id="files"/>
 
     <br>
+    <br>
+    <br>
     
     <paper-button raised class="indigo" on-tap="readBlob">Parse</paper-button>
 
@@ -47,8 +49,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         properties: {
           lines: {
-            type: Array,
-            notify: true
+            type: String,
+            value: 'test',
+            notify: true,
+            reflectToAttribute: true
           },
           greeting: {
             type: String,
@@ -76,8 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             if (evt.target.readyState === FileReader.DONE) {
               // console.log(evt.target.result);
               polymerEl.lines = evt.target.result;
-              console.log('this.lines: ', polymerEl.lines);
-              polymerEl.fire('new-lines', { lines: evt.target.result });
+              polymerEl.fire('newlines', { lines: evt.target.result });
             }
             console.log('onloadend called: ', evt);
           };

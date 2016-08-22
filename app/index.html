@@ -119,7 +119,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <section data-route="home" tabindex="-1">
               <paper-material elevation="1">
 
-                <input-text-file></input-text-file>
+                <input-text-file lines="{{file}}"></input-text-file>
+
+                <msg-parser toparse="{{file}}"></msg-parser>
 
               <p>Send the entire WhatsApp message history to your email
                 address. Download the .txt file and upload it here.</p>
