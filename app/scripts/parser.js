@@ -10,21 +10,10 @@ exports.NO_MSG_FOUND = 'no json found';
  * The maximum number of messages we allow. This is here mostly to avoid being
  * caught in an infinite while loop.
  */
-exports.MAX_MESSAGES = 100;
+var MAX_MESSAGES = 100;
 
 /** The flag we return if we don't find a match in a string. */
 var FLAG_NO_MATCH = -1;
-
-/**
- * A regex literal that defines the start of a message. Whatsapp doesn't
- * provide an API for this output, so we are best guessing it here. It could
- * change according to locale to which the file was exported or some other
- * terrible thing like that.
- *
- * We're basically just saying match the beginning of the string, a date, and
- * then a comma followed by a space..
- */
-exports.REGEX_MSG_START = /(^|\n)[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}, /;
 
 /**
  * Convert raw string content into an array of lines. Similar to Python's
@@ -40,6 +29,25 @@ exports.readLines = function(str) {
 };
 
 /**
+ * A regex literal that defines the start of a message. Whatsapp doesn't
+ * provide an API for this output, so we are best guessing it here. It could
+ * change according to locale to which the file was exported or some other
+ * terrible thing like that.
+ *
+ * Returned new each time, as the lastIndex property can be set after calling
+ * exec(), so this avoids pollution across invocations.
+ *
+ * We're basically just saying match the beginning of the string, a date, and
+ * then a comma followed by a space..
+ *
+ * @return {regex} regex literal to match the start of a message. Set up with
+ * global attribute.
+ */
+exports.getStartMessageRegex = function() {
+  return /(^|\n)[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}, /g;
+};
+
+/**
  * Find the start indices of all messages in str. E.g. if str contains two
  * messages, the result will have length = 2.
  *
@@ -49,14 +57,12 @@ exports.readLines = function(str) {
  */
 exports.findMessageStarts = function(str) {
   var result = [];
-  // This feels ugly, as we're creating lots of strings. Is there a native
-  // regex way to do this?
-  var nextStart = exports.getMessageStartIdx(str);
-  var numFound = 0;
-  while (nextStart !== FLAG_NO_MATCH && numFound <= exports.MAX_MESSAGES) {
-    numFound++;
-    result.push(nextStart);
-    nextStart = exports.getMessageStartIdx(str.substring(nextStart));
+  var arr;
+  var regex = exports.getStartMessageRegex();
+  var iterations = 0;
+  while ((arr = regex.exec(str)) !== null && iterations < MAX_MESSAGES) {
+    result.push(arr.index);
+    iterations++;
   }
   return result;
 };
@@ -67,7 +73,8 @@ exports.findMessageStarts = function(str) {
  * @param {string} str
  */
 exports.getMessageStartIdx = function(str) {
-  var match = exports.REGEX_MSG_START.exec(str);
+  var regex = exports.getStartMessageRegex();
+  var match = regex.exec(str);
   if (!match) {
     return FLAG_NO_MATCH;
   }
