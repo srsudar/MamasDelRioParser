@@ -85,9 +85,9 @@ var optimizeHtmlTask = function(src, dest) {
   return gulp.src(src)
     .pipe(assets)
     // Concatenate and minify JavaScript
-    .pipe($.if('*.js', $.uglify({
-      preserveComments: 'some'
-    })))
+    // .pipe($.if('*.js', $.uglify({
+    //   preserveComments: 'some'
+    // })))
     // Concatenate and minify styles
     // In case you are still using useref build blocks
     .pipe($.if('*.css', $.minifyCss()))
