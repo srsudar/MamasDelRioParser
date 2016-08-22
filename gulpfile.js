@@ -27,6 +27,13 @@ var historyApiFallback = require('connect-history-api-fallback');
 var packageJson = require('./package.json');
 var crypto = require('crypto');
 var ensureFiles = require('./tasks/ensure-files.js');
+var gutil = require('gulp-util');
+var browserify = require('browserify');
+var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
+var sourcemaps = require('gulp-sourcemaps');
+var babel = require('gulp-babel');
+var watchify = require('watchify');
 
 // var ghPages = require('gulp-gh-pages');
 
@@ -264,6 +271,43 @@ gulp.task('serve:dist', ['default'], function() {
     server: dist(),
     middleware: [historyApiFallback()]
   });
+});
+
+gulp.task('javascript', function() {
+  var opts = {
+    entries: [
+      './app/scripts/converter',
+      './app/scripts/parser'
+    ],
+    debug: true
+  };
+  var b = browserify(opts)
+  .require('./app/scripts/converter', { expose: 'converter' })
+  .require('./app/scripts/parser', { expose: 'parser' });
+
+  return b.bundle()
+  .pipe(source('bundle.js'))
+  .pipe(buffer())
+  .pipe(sourcemaps.init({loadMaps: true}))
+  .pipe(sourcemaps.write('./'))
+  .pipe(gulp.dest('app/scripts/'));
+
+  // return b.bundle()
+  // .on('error', gutil.log.bind(gutil, 'Browserify Error'))
+  // .pipe(source('bundle.js'))
+  // .pipe(buffer())
+  // .pipe(gulp.dest('.app/scripts/gulped'));
+
+  // return b.bundle()
+  //   .pipe(source('./app/scripts/app.js'))
+  //   .transform(babel)
+  //   .pipe(buffer())
+  //   .pipe(sourcemaps.init({loadMaps: true}))
+  //       // Add transformation tasks to the pipeline here.
+  //       .pipe($.uglify())
+  //       .on('error', gutil.log)
+  //   .pipe(sourcemaps.write('./dist/'))
+  //   .pipe(gulp.dest('./dist/scripts/'));
 });
 
 // Build production files, the default task

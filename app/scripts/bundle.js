@@ -373,6 +373,7 @@ function createColumnContent(params, str) {
 }
 
 }).call(this,require('_process'))
+
 },{"_process":8,"flat":1,"lodash.flatten":4,"lodash.get":5,"lodash.uniq":6,"os":7}],4:[function(require,module,exports){
 (function (global){
 /**
@@ -726,6 +727,7 @@ function isObjectLike(value) {
 module.exports = flatten;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{}],5:[function(require,module,exports){
 (function (global){
 /**
@@ -1661,6 +1663,7 @@ function get(object, path, defaultValue) {
 module.exports = get;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{}],6:[function(require,module,exports){
 (function (global){
 /**
@@ -2561,6 +2564,7 @@ function noop() {
 module.exports = uniq;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{}],7:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
@@ -2610,48 +2614,145 @@ exports.EOL = '\n';
 
 },{}],8:[function(require,module,exports){
 // shim for using process in browser
-
 var process = module.exports = {};
 
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+(function () {
+    try {
+        cachedSetTimeout = setTimeout;
+    } catch (e) {
+        cachedSetTimeout = function () {
+            throw new Error('setTimeout is not defined');
+        }
+    }
+    try {
+        cachedClearTimeout = clearTimeout;
+    } catch (e) {
+        cachedClearTimeout = function () {
+            throw new Error('clearTimeout is not defined');
+        }
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
     }
 
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
             }
-        }, true);
-
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
+        }
+        queueIndex = -1;
+        len = queue.length;
     }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
 
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
 
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
 process.title = 'browser';
 process.browser = true;
 process.env = {};
 process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
 
 function noop() {}
 
@@ -2665,13 +2766,13 @@ process.emit = noop;
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
-}
+};
 
-// TODO(shtylman)
 process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
+process.umask = function() { return 0; };
 
 },{}],"converter":[function(require,module,exports){
 'use strict';
@@ -2702,4 +2803,253 @@ exports.getMessagesAsCsv = function(json) {
   return result;
 };
 
-},{"json2csv":3}]},{},[]);
+},{"json2csv":3}],"parser":[function(require,module,exports){
+'use strict';
+
+/**
+ * Functions for parsing Whatsapp files.
+ */
+
+exports.NO_MSG_FOUND = 'no json found';
+
+/**
+ * The maximum number of messages we allow. This is here mostly to avoid being
+ * caught in an infinite while loop.
+ */
+var MAX_MESSAGES = 100;
+
+/** The flag we return if we don't find a match in a string. */
+var FLAG_NO_MATCH = -1;
+
+/** The maximum number of times we try to sniff a JSON object. */
+var NUM_PARSE_ATTEMPTS = 10;
+
+/**
+ * Convert raw string content into an array of lines. Similar to Python's
+ * readlines method.
+ *
+ * @param {string} str the raw content from the file read
+ *
+ * @return {Array<string>} an array of string contents of the file
+ */
+exports.readLines = function(str) {
+  var result = str.split(/\r\n|\n/);
+  return result;
+};
+
+/**
+ * A regex literal that defines the start of a message. Whatsapp doesn't
+ * provide an API for this output, so we are best guessing it here. It could
+ * change according to locale to which the file was exported or some other
+ * terrible thing like that.
+ *
+ * Returned new each time, as the lastIndex property can be set after calling
+ * exec(), so this avoids pollution across invocations.
+ *
+ * We're basically just saying match the beginning of the string, a date, and
+ * then a comma followed by a space..
+ *
+ * @return {regex} regex literal to match the start of a message. Set up with
+ * global attribute.
+ */
+exports.getStartMessageRegex = function() {
+  return /(^|\n)[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}, /g;
+};
+
+/**
+ * Convert str to messages and try to extract JSON from each message. Returns
+ * all the JSON object as well as all the messages from which JSON was not
+ * extracted, to allow manual inspection of missed errors.
+ *
+ * @param {string} str the string from which to parse and extract messages
+ *
+ * @return {object} an object with two keys:
+ * {
+ *   json: Array,
+ *   noJson: Array
+ * }
+ * json is an Array of all JSON object extracted, while noJson is an Array of
+ * all the messages that did not produce JSON.
+ */
+exports.extractAllMessages = function(str) {
+  var messages = exports.extractMessages(str);
+  var json = [];
+  var noJson = [];
+  
+  messages.forEach(msg => {
+    var sniffed = exports.sniffJson(msg);  // sniff sniff
+    if (sniffed) {
+      json.push(sniffed);
+    } else {
+      noJson.push(msg);
+    }
+  });
+
+  return {
+    json: json,
+    noJson: noJson
+  };
+};
+
+/**
+ * Take a string and return an array of strings representing the messages. This
+ * is essentially just breaking the str into message-sized chunks.
+ *
+ * @param {string} str a monstro string
+ *
+ * @return {Array<string>} array of string messages
+ */
+exports.extractMessages = function(str) {
+  var indices = exports.findMessageStarts(str);
+  var result = [];
+  
+  for (var i = 0; i < indices.length; i++) {
+    // Only read up to the next index, except for the last one which we will
+    // read until the end of the string.
+    var start = indices[i];
+    var end = str.length;
+    if (i !== indices.length - 1) {
+      // Safe to use i+1.
+      end = indices[i + 1];
+    }
+    var msg = str.substring(start, end);
+    result.push(msg);
+  }
+
+  return result;
+};
+
+/**
+ * Make a best effort attempt to extract a JSON string from the string. This
+ * tries to find JSON in the message somewhere. It does its best to find the
+ * start and end of the JSON, but it isn't perfect and it definitely can be
+ * deceived.
+ *
+ * E.g., (ignoring quotations and escaping in these examples), hello {'foo':
+ * 'bar'} should return parsed {foo: bar}, dropping the hellow.
+ *
+ * "hello { {foo: bar}" is trickier, as there is a { in the message that might
+ * throw it off. sniffJson tries to solve this, but it doesn't try to be
+ * perfect. It tries to catch innocent mistakes.
+ *
+ * @param {sting} str string to sniff
+ *
+ * @return {object|null} returns the parsed JSON or null if it cannot find
+ * JSON.
+ */
+exports.sniffJson = function(str) {
+  // We are going to find {, and count +1 for each additional { we find. We
+  // will subtract 1 for each } we find. If we ever go negative, we know we
+  // have started in the wrong place or it is corrupted.
+  // 
+  // We aren't trying to account for parse error inside the JSON--we're just
+  // trying to find the right place to start parsing.
+  //
+  // Once we make it back to 0, we know we have valid JSON. We'll try it.
+
+  var open = '{';
+  var close = '}';
+
+  var exploring = str;
+  var start = exploring.indexOf(open) - 1;
+  // Try a limited number of times.
+  for (var i = 0; i < NUM_PARSE_ATTEMPTS; i++) {
+    start++;
+    exploring = exploring.substring(start);
+    var counter = 0;
+
+    var foundStart = false;
+    for (var ptr = 0; ptr < exploring.length; ptr++) {
+      var chr = exploring.charAt(ptr);
+      if (chr === open) {
+        // console.log('found start');
+        foundStart = true;
+        counter++;
+      } else if (chr === close) {
+        counter--;
+      }
+      if (counter === 0 && foundStart) {
+        // We've found an end point. Extract the string and try to parse it.
+        // ptr is pointing at a }. We need to take substring to that position
+        // +1, to ensure that we capture the closing brace.
+        var strOfInterest = exploring.substring(0, ptr + 1);
+        var parsed = exports.tryToParse(strOfInterest);
+        if (parsed) {
+          return parsed;
+        } else {
+          // Invalid starting point. Choose the next.
+          break;
+        }
+      } else if (counter < 0) {
+        // More } than {, we've found an invalid start point.
+        break;
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Safe way to parse questionable strings to JSON.
+ *
+ * @param {string} str the string to try and parse
+ *
+ * @return {object|null} JSON.parse() result if the parse succeeds, else null
+ */
+exports.tryToParse = function(str) {
+  var result = null;
+  try {
+    result = JSON.parse(str);
+  } catch (err) {
+    // Couldn't parse the value.
+  }
+  return result;
+};
+
+/**
+ * Find the start indices of all messages in str. E.g. if str contains two
+ * messages, the result will have length = 2.
+ *
+ * @param {string} str a mess of string content in which to find message starts
+ *
+ * @return {Array<integer>} an array with start indices of messages
+ */
+exports.findMessageStarts = function(str) {
+  var result = [];
+  var arr;
+  var regex = exports.getStartMessageRegex();
+  var iterations = 0;
+  while ((arr = regex.exec(str)) !== null && iterations < MAX_MESSAGES) {
+    // We have two cases to consider here. We are matching ^ or \n. ^
+    // represents no character, while \n is a character. If we've matched \n,
+    // the index+1 is the start.
+    var nextStart = arr.index;
+    if (nextStart !== 0) {
+      // ^ matches the beginning of the input string, so this can only occur if
+      // the index is zero.
+      nextStart = nextStart + 1;
+    }
+    result.push(nextStart);
+    iterations++;
+  }
+  return result;
+};
+
+/**
+ * Get the index of a message start in the string.
+ *
+ * @param {string} str
+ */
+exports.getMessageStartIdx = function(str) {
+  var regex = exports.getStartMessageRegex();
+  var match = regex.exec(str);
+  if (!match) {
+    return FLAG_NO_MATCH;
+  }
+  return match.index;
+};
+
+},{}]},{},["converter","parser"])
+
+
+//# sourceMappingURL=bundle.js.map

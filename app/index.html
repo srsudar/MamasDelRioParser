@@ -16,7 +16,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="generator" content="Polymer Starter Kit">
-  <title>Mamás del Río</title>
+  <title>Polymer Starter Kit</title>
 
   <!-- Place favicon.ico in the `app/` directory -->
 
@@ -82,6 +82,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <span>Home</span>
           </a>
 
+          <a data-route="users" href="{{baseUrl}}users">
+            <iron-icon icon="info"></iron-icon>
+            <span>Users</span>
+          </a>
+
           <a data-route="contact" href="{{baseUrl}}contact">
             <iron-icon icon="mail"></iron-icon>
             <span>Contact</span>
@@ -103,23 +108,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <!-- Application name -->
           <div class="middle middle-container">
-            <div class="app-name">Mamás del Río Converter</div>
+            <div class="app-name">Polymer Starter Kit</div>
           </div>
 
           <!-- Application sub title -->
           <div class="bottom bottom-container">
-            <div class="bottom-title">Convert WhatsApp JSON to CSV</div>
+            <div class="bottom-title">The future of the web today</div>
           </div>
         </paper-toolbar>
 
         <!-- Main Content -->
         <div class="content">
           <iron-pages attr-for-selected="data-route" selected="{{route}}">
-
             <section data-route="home" tabindex="-1">
               <paper-material elevation="1">
 
-                <input-text-file lines="{{file}}"></input-text-file>
+               <input-text-file lines="{{file}}"></input-text-file>
 
                 <msg-parser toparse="{{file}}"></msg-parser>
 
@@ -139,19 +143,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             </section>
 
+            <section data-route="users" tabindex="-1">
+              <paper-material elevation="1">
+                <h1 class="page-title" tabindex="-1">Users</h1>
+                <p>This is the users section</p>
+                <a href$="{{baseUrl}}users/Addy">Addy</a><br>
+                <a href$="{{baseUrl}}users/Rob">Rob</a><br>
+                <a href$="{{baseUrl}}users/Chuck">Chuck</a><br>
+                <a href$="{{baseUrl}}users/Sam">Sam</a>
+              </paper-material>
+            </section>
 
+            <section data-route="user-info" tabindex="-1">
+              <paper-material elevation="-1">
+                <h1 class="page-title" tabindex="-1">User: {{params.name}}</h1>
+                <div>This is {{params.name}}'s section</div>
+              </paper-material>
+            </section>
 
             <section data-route="contact" tabindex="-1">
               <paper-material elevation="1">
                 <h1 class="page-title" tabindex="-1">Contact</h1>
-                <p>General information about Mamás del Río can be found at <a
-                    href="http://www.mamasdelrio.org/">the Mamás del Río
-                    page</a>.
-                </p>
-                <p>If you experience any problems with this page, please open
-                  an issue on <a
-                    href="https://github.com/srsudar/MamasDelRioParser">the
-                    Github project page</a>.</p>
+                <p>This is the contact section</p>
               </paper-material>
             </section>
           </iron-pages>
@@ -185,8 +198,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <!-- build:js scripts/app.js -->
   <script src="scripts/app.js"></script>
-  <script src="scripts/bundle1.js"></script>
-  <script src="scripts/bundle2.js"></script>
+  <!-- build:js scripts/bundle.js -->
+  <script src="scripts/bundle.js"></script>
   <!-- endbuild-->
 </body>
 

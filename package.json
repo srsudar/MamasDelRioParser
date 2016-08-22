@@ -40,6 +40,8 @@
     "node": ">=0.10.0"
   },
   "dependencies": {
-    "json2csv": "^3.6.3"
+    "gulp-babel": "^6.1.2",
+    "json2csv": "^3.6.3",
+    "watchify": "^3.7.0"
   }
 }
