@@ -63,12 +63,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         parseMessages: function() {
           var parser = require('parser');
-          var convert = require('converter');
-          var result = parser.extractAllMessages(this.toparse);
-          return result;
+          var converter = require('converter');
+          var parsed = parser.extractAllMessages(this.toparse);
+          console.log('parsed result: ', parsed);
+          var csv = converter.getMessagesAsCsv(parsed.json);
+          return {csv: csv, noJson: parsed.noJson};
         },
 
-        downloadText: function(text) {
+        downloadText: function(text, fileName) {
           // Based on:
           // https://stackoverflow.com/questions/3665115/
           // create-a-file-in-memory-for-user-to-download-not-through-server
@@ -76,9 +78,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           element.setAttribute(
             'href',
             'data:text/plain;charset=utf-8,' +
-              encodeURIComponent(messages.json)
+              encodeURIComponent(text)
           );
-          element.setAttribute('download', filename);
+          element.setAttribute('download', fileName);
 
           element.style.display = 'none';
           document.body.appendChild(element);
@@ -89,22 +91,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         downloadIgnored: function() {
-          if (!this.parse || this.parse === '') {
-            alert('no msg to output');
-            return;
-          }
-          var parsed = this.parseMessages();
-          this.downloadText(JSON.stringify(parsed.json));
-          document.getElementById('ignored-msg').textContent = messages.noJson;
-        },
-
-        downloadJson: function() {
-          if (!this.parse || this.parse === '') {
+          if (!this.toparse || this.toparse === '') {
             alert('no ignored to output');
             return;
           }
           var parsed = this.parseMessages();
-          this.downloadText(JSON.stringify(parsed.noJson));
+          this.downloadText(
+            JSON.stringify(parsed.noJson),
+            'ignored.json'
+          );
+          document.getElementById('ignored-msg').textContent = messages.noJson;
+        },
+
+        downloadJson: function() {
+          if (!this.toparse || this.toparse === '') {
+            alert('no messages to output');
+            return;
+          }
+          var parsed = this.parseMessages();
+          this.downloadText(
+            parsed.csv,
+            'messages.csv'
+          );
         }
       });
     })();
