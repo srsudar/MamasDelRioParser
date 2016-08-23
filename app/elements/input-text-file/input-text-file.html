@@ -35,7 +35,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <br>
     <br>
     
-    <paper-button raised class="indigo" on-tap="readBlob">Parse</paper-button>
+    <div id="status"></div>
 
   </template>
 
@@ -49,7 +49,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         properties: {
           lines: {
             type: String,
-            value: 'test',
+            value: '',
             notify: true,
             reflectToAttribute: true
           },
@@ -60,8 +60,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
         },
 
+        attached: function() {
+          var input = document.getElementById('files');
+          input.onchange = this.readBlob.bind(this);
+        },
+
         readBlob: function() {
-          var polymerEl = this;
+          // assume 'this' is bound to local PolymerElement
+          var status = this.$.status;
+          status.textContent = 'Uploading...';
           // Taken from:
           // http://www.html5rocks.com/en/tutorials/file/dndfiles/
           var files = document.getElementById('files').files;
@@ -75,11 +82,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           var stop = file.size - 1;
 
           var reader = new FileReader();
+          var pel = this;
           reader.onloadend = function(evt) {
             if (evt.target.readyState === FileReader.DONE) {
               // console.log(evt.target.result);
-              polymerEl.lines = evt.target.result;
-              polymerEl.fire('newlines', { lines: evt.target.result });
+              status.textContent = 'Loaded';
+              pel.lines = evt.target.result;
             }
             console.log('onloadend called: ', evt);
           };
