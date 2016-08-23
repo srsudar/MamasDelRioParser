@@ -20510,6 +20510,10 @@ module.exports = Array.isArray || function (arr) {
         color: white;
       }
 
+      paper-button.disabled {
+        color: white;
+      },
+
       span,
       input {
         @apply(--paper-font-body2);
@@ -20519,8 +20523,8 @@ module.exports = Array.isArray || function (arr) {
     <br>
     <br>
 
-    <paper-button raised="" class="indigo" on-tap="downloadJson">Download CSV</paper-button>
-    <paper-button raised="" class="indigo" on-tap="downloadIgnored">Download Ignored</paper-button>
+    <paper-button id="messages" raised="" disabled="" class="indigo disabled" on-tap="downloadJson">Download CSV</paper-button>
+    <paper-button id="ignored" raised="" disabled="" class="indigo disabled" on-tap="downloadIgnored">Download Ignored</paper-button>
 
     <div id="ignored-msg"></div>
 
@@ -20547,7 +20551,52 @@ module.exports = Array.isArray || function (arr) {
             value: 'Welcome!',
             notify: true
           },
-          toparse: String
+          toparse: {
+            type: String,
+            observer: 'toParseChanged'
+          },
+          enabled: {
+            type: Boolean,
+            value: false,
+            observer: 'enabledChanged',
+          },
+        },
+
+        toParseChanged: function() {
+          console.log('toParseChanged, toparse: ', this.toparse);
+          if (this.toparse && this.toparse !== '') {
+            this.enabled = true;
+          } else {
+            this.enabled = false;
+          }
+        },
+
+        enabledChanged: function() {
+          console.log('enabledChanged called');
+          if (this.enabled) {
+            this.$.messages.classList.add('indigo');
+            this.$.ignored.classList.add('indigo');
+
+            this.$.messages.classList.remove('disabled');
+            this.$.ignored.classList.remove('disabled');
+            
+            this.$.messages.removeAttribute('disabled');
+            this.$.ignored.removeAttribute('disabled');
+          } else {
+            this.$.messages.classList.add('disabled');
+            this.$.ignored.classList.add('disabled');
+
+            this.$.messages.classList.remove('indigo');
+            this.$.ignored.classList.remove('indigo');
+
+            this.$.messages.setAttribute('disabled', 'disabled');
+            this.$.ignored.setAttribute('disabled', 'disabled');
+          }
+        },
+
+        disableButtons: function() {
+          console.log('calling disabledButtons');
+          return this.toparse && this.toparse !== ''; 
         },
 
         parseMessages: function() {
@@ -20630,7 +20679,7 @@ module.exports = Array.isArray || function (arr) {
     <br>
     <br>
     
-    <paper-button raised="" class="indigo" on-tap="readBlob">Parse</paper-button>
+    <div id="status"></div>
 
   </template>
 
@@ -20644,7 +20693,7 @@ module.exports = Array.isArray || function (arr) {
         properties: {
           lines: {
             type: String,
-            value: 'test',
+            value: '',
             notify: true,
             reflectToAttribute: true
           },
@@ -20655,8 +20704,15 @@ module.exports = Array.isArray || function (arr) {
           },
         },
 
+        attached: function() {
+          var input = document.getElementById('files');
+          input.onchange = this.readBlob.bind(this);
+        },
+
         readBlob: function() {
-          var polymerEl = this;
+          // assume 'this' is bound to local PolymerElement
+          var status = this.$.status;
+          status.textContent = 'Uploading...';
           // Taken from:
           // http://www.html5rocks.com/en/tutorials/file/dndfiles/
           var files = document.getElementById('files').files;
@@ -20670,11 +20726,12 @@ module.exports = Array.isArray || function (arr) {
           var stop = file.size - 1;
 
           var reader = new FileReader();
+          var pel = this;
           reader.onloadend = function(evt) {
             if (evt.target.readyState === FileReader.DONE) {
               // console.log(evt.target.result);
-              polymerEl.lines = evt.target.result;
-              polymerEl.fire('newlines', { lines: evt.target.result });
+              status.textContent = 'Loaded';
+              pel.lines = evt.target.result;
             }
             console.log('onloadend called: ', evt);
           };
