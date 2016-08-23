@@ -279,25 +279,25 @@ gulp.task('serve:dist', ['default'], function() {
   });
 });
 
-// gulp.task('javascript', function() {
-//   var opts = {
-//     entries: [
-//       './app/scripts/converter',
-//       './app/scripts/parser'
-//     ],
-//     debug: true
-//   };
-//   var b = browserify(opts)
-//   .require('./app/scripts/converter', { expose: 'converter' })
-//   .require('./app/scripts/parser', { expose: 'parser' });
+gulp.task('javascript', function() {
+  var opts = {
+    entries: [
+      './app/scripts/converter',
+      './app/scripts/parser'
+    ],
+    debug: true
+  };
+  var b = browserify(opts)
+  .require('./app/scripts/converter', { expose: 'converter' })
+  .require('./app/scripts/parser', { expose: 'parser' });
 
-//   return b.bundle()
-//   .pipe(source('bundle.js'))
-//   .pipe(buffer())
-//   .pipe(sourcemaps.init({loadMaps: true}))
-//   .pipe(sourcemaps.write('./'))
-//   .pipe(gulp.dest('app/scripts/'));
-// });
+  return b.bundle()
+  .pipe(source('bundle.js'))
+  .pipe(buffer())
+  .pipe(sourcemaps.init({loadMaps: true}))
+  .pipe(sourcemaps.write('./'))
+  .pipe(gulp.dest('app/scripts/'));
+});
 
 // Build production files, the default task
 gulp.task('default', ['clean'], function(cb) {
